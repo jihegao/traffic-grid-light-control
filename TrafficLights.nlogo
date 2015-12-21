@@ -16,11 +16,7 @@ to go
   tick
   jgo
   movecars
-  spawnCar
-;  set sum-car-cognestion-count ((count cars with [cognestion = true]) + sum-car-cognestion-count)
-;  set avarage-cars-in-cognestion sum-car-cognestion-count / ticks
-;  set sum-carcount (sum-carcount + carcount)
-;  set avarage-car-count sum-carcount / ticks
+  create-car-at-entrance
 end
 
 to setup
@@ -65,23 +61,6 @@ BUTTON
 55
 NIL
 setup
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
-
-BUTTON
-6
-21
-109
-55
-NIL
-spawnCar
 NIL
 1
 T

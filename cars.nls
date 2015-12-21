@@ -11,7 +11,7 @@ cars-own[
 ]
 
 
-to spawnCar
+to create-car-at-entrance
   if (random 100 < spawn-propabilty)
   [
     let rndNode one-of nodes with [node_type = 1 and count cars-here < 1]
