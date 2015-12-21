@@ -1,0 +1,113 @@
+globals [
+  carcount carsspawned scenario
+]
+
+breed [cars car]
+cars-own[
+  nextTarget lastTarget speed
+  leader?
+  cognestion cognestion-time current-cognestion-time cognestion-count longest-cognestion average-cognestion-time
+  birthtime
+]
+
+
+to spawnCar
+  if (random 100 < spawn-propabilty)
+  [
+    let rndNode one-of nodes with [node_type = 1 and count cars-here < 1]
+    if rndNode != nobody
+    [
+      create-cars 1 [
+        set xcor [xcor] of rndNode
+        set ycor [ycor] of rndNode
+        set size 1   
+        set color yellow
+        set lastTarget rndNode
+        
+        set nextTarget one-of [link_end] of lastTarget
+        if nextTarget = nobody [ 
+          output-show "ERROR: nextTarget is nobody"
+          die]
+        
+        face nextTarget
+        set cognestion false
+        set carcount (carcount + 1)
+        set carsspawned (carsspawned + 1)
+        set birthtime ticks
+        set leader? false
+      ]
+    ]
+  ]
+end
+
+
+
+to updateTarget
+  set lastTarget nextTarget
+  ifelse length [link_end] of nextTarget > 0
+  [ set nextTarget one-of [link_end] of nextTarget ]
+  [ set carcount ( carcount - 1)
+    die 
+  ]
+
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  
+to movecars
+  ask cars
+  [ 
+    if speed > 0 and distance nextTarget < speed-limit [
+      updateTarget
+      face nextTarget
+  ]
+    set-car-speed
+    fd speed
+  ]
+end
+
+
+;; set the turtles' speed based on whether they are at a red traffic light or the speed of the
+;; turtle (if any) on the patch in front of them
+to set-car-speed  ;; turtle procedure
+  ifelse [color] of nextTarget = red and distance nextTarget < speed-limit * 2
+  [ set speed 0 ]
+  [ 
+    following-car-ahead-speed speed-limit * 1.5
+  ]
+end
+
+;; set the speed variable of the car to an appropriate value (not exceeding the
+;; speed limit) based on whether there are cars on the patch in front of the car
+to following-car-ahead-speed [ dis-ahead ]  
+  ;; get the cars on the patch in front of the turtle
+  let cars-ahead cars in-cone dis-ahead 10 with [ who != [who] of myself ]
+  ;; if there are turtles in front of the turtle, slow down
+  ;; otherwise, speed up
+  ifelse any? cars-ahead
+  [
+    let car0 min-one-of cars-ahead [distance myself]
+    set leader? false
+    set speed [speed] of car0
+  ]
+  [ 
+    set leader? true
+    speed-up 
+  ]
+end
+
+;; decrease the speed of the turtle
+to slow-down  ;; turtle procedure
+  ifelse speed <= 0  
+  [ set speed 0 ]
+  [ set speed speed - deceleration ]
+end
+
+;; increase the speed of the turtle
+to speed-up  ;; turtle procedure
+  ifelse speed > speed-limit
+  [ set speed speed-limit ]
+  [ set speed speed + acceleration ]
+end

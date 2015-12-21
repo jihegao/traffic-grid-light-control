@@ -1,0 +1,317 @@
+extensions[gis]
+
+globals[minx maxx miny maxy 
+  junction_light_list junction_phase_list
+  ]
+
+breed [nodes node]
+directed-link-breed [roads road]
+nodes-own[
+  name
+  node_type    ; 0 - exit, 1 - entrance
+  is_light
+  is_active
+  link_end
+  ]
+
+
+to draw-roads
+
+  let node_list
+  [
+    ;cross 1
+    ["C1N1" [-14 -10]]
+    ["C1N2" [-14 -6]]
+    ["C1N3" [-14 6]]
+    ["C1N4" [-14 10]] 
+    ["C1S1" [-11 10]]
+    ["C1S2" [-11 6]]
+    ["C1S3" [-11 -6]]
+    ["C1S4" [-11 -10]] 
+    ["C1W1" [-20 -1]]
+    ["C1W2" [-16 -1]]
+    ["C1W3" [-9 -1]]
+    ["C1W3r" [-9 -2]]
+    ["C1W4" [-4 -1]] 
+    ["C1W4r" [-4 -2]]        
+    ["C1E1" [-4 1]]
+    ["C1E1r" [-4 2]]
+    ["C1E2" [-9 1]]
+    ["C1E2r" [-9 2]]    
+    ["C1E3" [-16 1]]
+    ["C1E4" [-20 1]] 
+    
+    ;cross 2
+    ["C2N1" [6 -10]]
+    ["C2N1r" [5 -10]]
+    ["C2N2" [6 -6]]
+    ["C2N2r" [5 -6]]
+    ["C2N3" [6 6]]
+    ["C2N3r" [5 6]]
+    ["C2N3l" [9 2]] 
+    ["C2N4" [6 10]] 
+    ["C2N4r" [5 10]]
+    ["C2S1" [10 10]]
+    ["C2S1r" [11 10]]
+    ["C2S2" [10 6]]
+    ["C2S2r" [11 6]]    
+    ["C2S3" [10 -6]]
+    ["C2S3r" [11 -6]]    
+    ["C2S3l" [9 -4]]
+    ["C2S4" [10 -10]] 
+    ["C2S4r" [11 -10]]    
+    ["C2W1" [0 -1]]
+    ["C2W1r" [0 -2]]    
+    ["C2W2" [4 -1]]
+    ["C2W2l" [8 0]]
+    ["C2W2r" [4 -2]]
+    ["C2W3" [14 -1]]
+    ["C2W3r" [14 -2]]
+    ["C2W4" [18 -1]]     
+    ["C2W4r" [18 -2]]
+    ["C2E1" [18 1]]
+    ["C2E1r" [18 2]]
+    ["C2E2" [14 1]]
+    ["C2E2l" [9 0]] 
+    ["C2E2r" [14 2]] 
+    ["C2E3" [4 1]]
+    ["C2E3r" [4 2]]
+    ["C2E4" [0 1]] 
+    ["C2E4r" [0 2]] 
+  ]
+  
+  let link_list
+  [
+    ; straight line
+    ["C1N4" "C1N3"]
+    ["C1N3" "C1N2"]
+    ["C1N2" "C1N1"]
+    ["C1S4" "C1S3"]
+    ["C1S3" "C1S2"]
+    ["C1S2" "C1S1"]
+    ["C1E1" "C1E2"]
+    ["C1E2" "C1E3"]
+    ["C1E3" "C1E4"]
+    ["C1W1" "C1W2"]
+    ["C1W2" "C1W3"]
+    ["C1W3" "C1W4"]
+    ; right-turn line
+    ["C1E1r" "C1E2r"] 
+    ["C1S3" "C1W3r"]
+    ["C1W3r" "C1W4r"]
+    ["C1W2" "C1N2"] 
+    ["C1N3" "C1E3"]    
+    ["C1E2" "C1S2"]    
+    ; left-turn line
+    ["C1S3" "C1E3"]
+    ["C1W2" "C1S2"] 
+    ["C1N3" "C1W3"]    
+    ["C1E2" "C1N2"]
+    ; cross 1 to cross 2
+    ["C1E1" "C2E4"]
+    ["C1E1r" "C2E4r"]
+    ["C1W4" "C2W1"]
+    ["C1W4r" "C2W1r"]
+    
+    ; cross 2
+    ["C2N4" "C2N3"]
+    ["C2N4r" "C2N3r"]
+    ["C2N3" "C2N3l"]
+    ["C2N3l" "C2W3"]
+    ["C2N3" "C2N2"]
+    ["C2N3r" "C2N2r"]
+    ["C2N3r" "C2E3r"]    
+    ["C2E3" "C2E4"]        
+    ["C2E3r" "C2E4r"]    
+            
+    ["C2E1" "C2E2"]    
+    ["C2E1r" "C2E2r"]    
+    ["C2E2" "C2E3"] 
+    ["C2E2" "C2E2l"]
+    ["C2E2l" "C2N2"]    
+    ["C2E2r" "C2E3r"]
+    ["C2E2r" "C2S2r"]
+    
+    ["C2S2" "C2S1"]    
+    ["C2S2r" "C2S1r"]    
+        
+    ["C2S3" "C2S3l"]    
+    ["C2S3l" "C2E3"]        
+    ["C2S3" "C2S2"]
+    ["C2S3r" "C2S2r"]            
+    ; 
+    ["C2W1" "C2W2"]    
+    ["C2W1r" "C2W2r"]
+    ["C2W1r" "C2N2r"]    
+    ["C2W1" "C2W2l"]        
+
+    ["C2S4" "C2S3"]
+    ["C2S4r" "C2S3r"]
+
+    ["C2S3r" "C2W3r"]
+
+    ["C2W3" "C2W4"]
+    ["C2W3r" "C2W4r"]
+        
+    ["C2W2" "C2W3"]    
+    ["C2W2l" "C2S2"]        
+    
+    ;
+    ["C2W2r" "C2N2r"]
+    ["C2W2r" "C2W3r"]    
+    ["C2N2" "C2N1"]    
+    ["C2N2r" "C2N1r"]    
+  ]
+ 
+  set junction_light_list 
+  [
+    ; junction 1
+    ["C1S3" "C1N3" "C1E2" "C1W2"]
+    ; junction 2
+    ["C2S3" "C2S3r" "C2S3l" "C2N3" "C2N3r" "C2N3l" "C2E2r" "C2E2" "C2E2l" "C2W2r" "C2W2" "C2W2l"]
+  ]
+
+
+  set junction_phase_list
+  [
+    ; junction1
+    [
+      [1 1 0 0][0 0 0 0][0 0 1 1][0 0 0 0]
+    ]
+    ; junction2:["C2S3" "C2S3r" "C2S3l" "C2N3" "C2N3r" "C2N3l" "C2E2r" "C2E2" "C2E2l" "C2W2r" "C2W2" "C2W2l"]
+    [ 
+      [0 0 0 0 0 0 0 0 0 0 0 0]
+      [1 1 0 1 1 0 0 0 0 0 0 0]
+      [0 0 0 0 0 0 0 0 0 0 0 0]
+      [0 0 1 0 0 1 0 0 0 0 0 0]
+      [0 0 0 0 0 0 0 0 0 0 0 0]
+      [0 0 0 0 0 0 1 1 0 1 1 0]
+      [0 0 0 0 0 0 0 0 0 0 0 0]
+      [0 0 0 0 0 0 0 0 1 0 0 1]      
+      [0 0 0 0 0 0 0 0 0 0 0 0]
+    ]
+  ]
+  
+  let entrance_list ["C1N4" "C1S4" "C1W1" "C2N4" "C2N4r" "C2S4" "C2S4r" "C2E1" "C2E12"]
+  
+  let l length node_list
+  create-nodes l
+  [
+    set shape "circle"
+    set color gray
+    set size 0.75
+    set link_end [ ]
+  ]
+  
+  ; set label and position
+  (foreach sort nodes node_list [
+    ask ?1 [ 
+      set name first ?2
+      if display_label? [set label name]
+      set xcor first last ?2
+      set ycor last last ?2
+    ]
+  ])
+  
+  
+  ; set entrance points
+  (foreach entrance_list [ ask nodes with [name = ?][ set node_type 1 ] ])
+  ; 
+  set entrances nodes with [out-link-neighbors = nobody]
+  
+  ;; building links
+  foreach link_list
+  [ ask nodes with [name = first ?]
+    [ 
+      let new_end one-of nodes with [name = last ? ]
+      set link_end lput new_end link_end
+      create-road-to new_end
+      ;ask links [die]
+    ]
+  ]
+  
+  
+  ; set exit points
+  ask nodes with [ my-out-roads = nobody ][ set node_type 0 ]
+  
+  init-junctions
+ 
+end
+
+
+
+
+to setup_world[minimumx maximumx minimumy maximumy]
+  set minx minimumx
+  set maxx maximumx
+  set miny minimumy
+  set maxy maximumy
+  gis:set-transformation (list minx maxx miny maxy) (list min-pxcor max-pxcor min-pycor max-pycor)
+end
+
+to setup_roadnetwork
+  clear-all
+  setup_world 3548844 3550246 5803780 5805405
+  createRoadNetwork "bridge/bridge.shp" 
+end
+
+to createRoadNetwork[shapefile]
+  let roads_data gis:load-dataset shapefile
+  
+  foreach gis:feature-list-of roads_data [
+    let first_element true
+    let previous nobody
+    foreach gis:vertex-lists-of ? [
+      foreach ? [
+        let pos gis:location-of ?
+        if length pos = 2 [ 
+          ifelse first_element [
+            set first_element false
+            let node getExistingNode item 0 pos item 1 pos ?  
+            ifelse node = nobody [
+              create-nodes 1 [
+                set xcor item 0 pos
+                set ycor item 1 pos
+                set node_type 1
+                set previous self
+                set size 0
+              ]  
+            ];else 
+            [
+              ask node [set size 0]
+              set previous node
+            ]
+          ];else 
+          [
+            let node getExistingNode item 0 pos item 1 pos ?
+            ifelse node != nobody [
+              ask previous [create-link-to node]
+              set previous node
+              ask node [set node_type 2]
+            ];else
+            [  
+              create-nodes 1 [
+                create-link-from previous
+                set xcor item 0 pos
+                set ycor item 1 pos
+                set node_type 2
+                set previous self
+                set size 0
+              ]
+            ]
+          ]
+        ]            
+      ]
+    ]
+  ]
+end
+
+to-report getExistingNode[x y node]
+  foreach sort nodes [
+    if x = [xcor] of ? and y = [ycor] of ? and node != ? [
+      report ?
+    ]
+  ]
+  report nobody
+end
+

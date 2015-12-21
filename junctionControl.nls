@@ -1,0 +1,92 @@
+breed [junctions junction]
+junctions-own [
+  jc
+  phase_list
+  current_phase
+  own_lights
+  queue
+  qpos
+  jc_init
+]
+
+
+to init-junctions
+  if length junction_phase_list != length junction_light_list
+  [
+    print "ERROR!! junction_phase_list != length junction_light_list"
+    stop
+  ]
+  let n length junction_phase_list
+  create-junctions n [
+    set hidden? true
+    set jc jc_lenth
+    set own_lights [ ]
+  ]
+  
+  (foreach (sort junctions) junction_light_list junction_phase_list [
+    ; mark nodes as light
+    ask ?1 [
+      foreach ?2 [ set own_lights lput one-of nodes with [name = ?] own_lights ]
+
+      set current_phase 0
+
+      (foreach own_lights [ask ? [
+         set is_light true 
+         set color red
+         set is_active true
+         ]
+      ])
+      
+      set phase_list ?3
+      setting_light_color first ?3
+
+    ]
+  ])
+
+end
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;                      go functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to jgo
+  ask junctions [
+    ifelse jc = 1
+    [ tl ]
+    [ set jc jc - 1 ]
+  ]
+
+;  if scenario = "indian"     [              ];indian all lights ar green no toggeling
+;  if scenario = "constant"   [jt-constant   ]
+;  if scenario = "traffic"    [jt-traffic    ]
+;  if scenario = "cooperativ" [jt-cooperativ ]
+end
+
+to tl 
+  let next-phase 0
+  ifelse current_phase >= (length phase_list - 1)
+  [
+    set current_phase 0
+    set next-phase first phase_list
+  ];else
+  [
+    set current_phase current_phase + 1    
+    set next-phase item current_phase phase_list
+  ]
+  setting_light_color next-phase
+  ifelse next-phase = [ 0 0 0 0 ]
+  [ set jc jc_lenth / 2 ]
+  [ set jc jc_lenth ]
+end
+
+to setting_light_color [phase]
+  (foreach own_lights phase [
+      ask ?1 [
+        ifelse ?2 = 0 
+        [ set color red ]
+        [ set color green]
+      ]
+  ])
+end
+
