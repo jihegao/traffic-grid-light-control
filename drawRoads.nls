@@ -1,4 +1,4 @@
-extensions[gis]
+;extensions[gis]
 
 globals[minx maxx miny maxy 
   junction_light_list junction_phase_list
@@ -6,6 +6,18 @@ globals[minx maxx miny maxy
 
 breed [nodes node]
 directed-link-breed [roads road]
+
+breed [junctions junction]
+junctions-own [
+  jc
+  phase_list
+  current_phase
+  own_lights
+  queue
+  qpos
+  jc_init
+]
+
 nodes-own[
   name
   node_type    ; 0 - exit, 1 - entrance
@@ -242,68 +254,68 @@ end
 
 
 to setup_world[minimumx maximumx minimumy maximumy]
-  set minx minimumx
-  set maxx maximumx
-  set miny minimumy
-  set maxy maximumy
-  gis:set-transformation (list minx maxx miny maxy) (list min-pxcor max-pxcor min-pycor max-pycor)
+;  set minx minimumx
+;  set maxx maximumx
+;  set miny minimumy
+;  set maxy maximumy
+;  gis:set-transformation (list minx maxx miny maxy) (list min-pxcor max-pxcor min-pycor max-pycor)
 end
 
 to setup_roadnetwork
-  clear-all
-  setup_world 3548844 3550246 5803780 5805405
-  createRoadNetwork "bridge/bridge.shp" 
+;  clear-all
+;  setup_world 3548844 3550246 5803780 5805405
+;  createRoadNetwork "bridge/bridge.shp" 
 end
 
 to createRoadNetwork[shapefile]
-  let roads_data gis:load-dataset shapefile
-  
-  foreach gis:feature-list-of roads_data [
-    let first_element true
-    let previous nobody
-    foreach gis:vertex-lists-of ? [
-      foreach ? [
-        let pos gis:location-of ?
-        if length pos = 2 [ 
-          ifelse first_element [
-            set first_element false
-            let node getExistingNode item 0 pos item 1 pos ?  
-            ifelse node = nobody [
-              create-nodes 1 [
-                set xcor item 0 pos
-                set ycor item 1 pos
-                set node_type 1
-                set previous self
-                set size 0
-              ]  
-            ];else 
-            [
-              ask node [set size 0]
-              set previous node
-            ]
-          ];else 
-          [
-            let node getExistingNode item 0 pos item 1 pos ?
-            ifelse node != nobody [
-              ask previous [create-link-to node]
-              set previous node
-              ask node [set node_type 2]
-            ];else
-            [  
-              create-nodes 1 [
-                create-link-from previous
-                set xcor item 0 pos
-                set ycor item 1 pos
-                set node_type 2
-                set previous self
-                set size 0
-              ]
-            ]
-          ]
-        ]            
-      ]
-    ]
-  ]
+;  let roads_data gis:load-dataset shapefile
+;  
+;  foreach gis:feature-list-of roads_data [
+;    let first_element true
+;    let previous nobody
+;    foreach gis:vertex-lists-of ? [
+;      foreach ? [
+;        let pos gis:location-of ?
+;        if length pos = 2 [ 
+;          ifelse first_element [
+;            set first_element false
+;            let node getExistingNode item 0 pos item 1 pos ?  
+;            ifelse node = nobody [
+;              create-nodes 1 [
+;                set xcor item 0 pos
+;                set ycor item 1 pos
+;                set node_type 1
+;                set previous self
+;                set size 0
+;              ]  
+;            ];else 
+;            [
+;              ask node [set size 0]
+;              set previous node
+;            ]
+;          ];else 
+;          [
+;            let node getExistingNode item 0 pos item 1 pos ?
+;            ifelse node != nobody [
+;              ask previous [create-link-to node]
+;              set previous node
+;              ask node [set node_type 2]
+;            ];else
+;            [  
+;              create-nodes 1 [
+;                create-link-from previous
+;                set xcor item 0 pos
+;                set ycor item 1 pos
+;                set node_type 2
+;                set previous self
+;                set size 0
+;              ]
+;            ]
+;          ]
+;        ]            
+;      ]
+;    ]
+;  ]
 end
 
 to-report getExistingNode[x y node]

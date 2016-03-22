@@ -1,18 +1,20 @@
 __includes [
-            "junctionControl.nls" 
-            "cars.nls" 
+           ; "junctionControl.nls"
+           ; "cars.nls"
             "drawRoads.nls"
             ]
 
 globals [
-  avarage-cars-in-cognestion 
-  sum-car-cognestion-count 
-  avarage-car-count 
-  sum-carcount 
+  carcount carsspawned scenario
+
+  avarage-cars-in-cognestion
+  sum-car-cognestion-count
+  avarage-car-count
+  sum-carcount
   entrances
 ]
 
-to go 
+to go
   tick
   jgo
   movecars
@@ -24,7 +26,206 @@ to setup
   ;init-roadnetwork
   draw-roads
 
-  reset-ticks  
+  reset-ticks
+end
+
+
+;CARS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+breed [cars car]
+cars-own[
+  nextTarget lastTarget speed
+  leader?
+  cognestion cognestion-time current-cognestion-time cognestion-count longest-cognestion average-cognestion-time
+  birthtime
+]
+
+
+to create-car-at-entrance
+  if (random 100 < spawn-propabilty)
+  [
+    let rndNode one-of nodes with [node_type = 1 and count cars-here < 1]
+    if rndNode != nobody
+    [
+      create-cars 1 [
+        set xcor [xcor] of rndNode
+        set ycor [ycor] of rndNode
+        set size 1
+        set color yellow
+        set lastTarget rndNode
+
+        set nextTarget one-of [link_end] of lastTarget
+        if nextTarget = nobody [
+          output-show "ERROR: nextTarget is nobody"
+          die]
+
+        face nextTarget
+        set cognestion false
+        set carcount (carcount + 1)
+        set carsspawned (carsspawned + 1)
+        set birthtime ticks
+        set leader? false
+      ]
+    ]
+  ]
+end
+
+
+
+to updateTarget
+  set lastTarget nextTarget
+  ifelse length [link_end] of nextTarget > 0
+  [ set nextTarget one-of [link_end] of nextTarget ]
+  [ set carcount ( carcount - 1)
+    die
+  ]
+
+end
+
+
+
+to movecars
+  ask cars
+  [
+    if speed > 0 and distance nextTarget < speed-limit [
+      updateTarget
+      face nextTarget
+  ]
+    set-car-speed
+    fd speed
+  ]
+end
+
+
+;; set the turtles' speed based on whether they are at a red traffic light or the speed of the
+;; turtle (if any) on the patch in front of them
+to set-car-speed  ;; turtle procedure
+  ifelse [color] of nextTarget = red and distance nextTarget < speed-limit * 2
+  [ set speed 0 ]
+  [
+    following-car-ahead-speed speed-limit * 1.5
+  ]
+end
+
+;; set the speed variable of the car to an appropriate value (not exceeding the
+;; speed limit) based on whether there are cars on the patch in front of the car
+to following-car-ahead-speed [ dis-ahead ]
+  ;; get the cars on the patch in front of the turtle
+  let cars-ahead cars in-cone dis-ahead 10 with [ who != [who] of myself ]
+  ;; if there are turtles in front of the turtle, slow down
+  ;; otherwise, speed up
+  ifelse any? cars-ahead
+  [
+    let car0 min-one-of cars-ahead [distance myself]
+    set leader? false
+    set speed [speed] of car0
+  ]
+  [
+    set leader? true
+    speed-up
+  ]
+end
+
+;; decrease the speed of the turtle
+to slow-down  ;; turtle procedure
+  ifelse speed <= 0
+  [ set speed 0 ]
+  [ set speed speed - deceleration ]
+end
+
+;; increase the speed of the turtle
+to speed-up  ;; turtle procedure
+  ifelse speed > speed-limit
+  [ set speed speed-limit ]
+  [ set speed speed + acceleration ]
+end
+
+;;;DRAWROADS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+to init-junctions
+  if length junction_phase_list != length junction_light_list
+  [
+    print "ERROR!! junction_phase_list != length junction_light_list"
+    stop
+  ]
+  let n length junction_phase_list
+  create-junctions n [
+    set hidden? true
+    set jc jc_lenth
+    set own_lights [ ]
+  ]
+
+  (foreach (sort junctions) junction_light_list junction_phase_list [
+    ; mark nodes as light
+    ask ?1 [
+      foreach ?2 [ set own_lights lput one-of nodes with [name = ?] own_lights ]
+
+      set current_phase 0
+
+      (foreach own_lights [ask ? [
+         set is_light true
+         set color red
+         set is_active true
+         ]
+      ])
+
+      set phase_list ?3
+      setting_light_color first ?3
+
+    ]
+  ])
+
+end
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;                      go functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to jgo
+  ask junctions [
+    ifelse jc = 1
+    [ tl ]
+    [ set jc jc - 1 ]
+  ]
+
+;  if scenario = "indian"     [              ];indian all lights ar green no toggeling
+;  if scenario = "constant"   [jt-constant   ]
+;  if scenario = "traffic"    [jt-traffic    ]
+;  if scenario = "cooperativ" [jt-cooperativ ]
+end
+
+to tl
+  let next-phase 0
+  ifelse current_phase >= (length phase_list - 1)
+  [
+    set current_phase 0
+    set next-phase first phase_list
+  ];else
+  [
+    set current_phase current_phase + 1
+    set next-phase item current_phase phase_list
+  ]
+  setting_light_color next-phase
+  ifelse next-phase = [ 0 0 0 0 ]
+  [ set jc jc_lenth / 2 ]
+  [ set jc jc_lenth ]
+end
+
+to setting_light_color [phase]
+  (foreach own_lights phase [
+      ask ?1 [
+        ifelse ?2 = 0
+        [ set color red ]
+        [ set color green]
+      ]
+  ])
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -198,26 +399,6 @@ precision (100 * avarage-cars-in-cognestion / avarage-car-count) (1)
 1
 11
 
-CHOOSER
-159
-511
-251
-556
-System
-System
-"linux" "windows"
-0
-
-CHOOSER
-7
-98
-145
-143
-import-option
-import-option
-"draw" "shp"
-0
-
 SLIDER
 8
 320
@@ -301,6 +482,21 @@ display_label?
 1
 1
 -1000
+
+SLIDER
+10
+110
+182
+143
+import-option
+import-option
+0
+1
+1
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -645,7 +841,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.2.0
+NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@

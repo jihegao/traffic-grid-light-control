@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<!DOCTYPE experiments SYSTEM "behaviorspace.dtd">
+
+<experiments>
+  <experiment name="experiment1" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="speed-limit">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="import-option">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="jc_lenth">
+      <value value="40"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gnerate-file">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="deceleration">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="spawn-propabilty">
+      <value value="24"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="display_label?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="acceleration">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="string-switch-input">
+      <value value="&quot;a&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="input-list">
+      <value value="&quot;[ 1 2 3 \&quot;a\&quot; 4 ]&quot;"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>  
