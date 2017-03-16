@@ -1,0 +1,260 @@
+globals [
+  log-car-file openfile
+  sink13 sink16 sink18 sink31 sink33 sink35 sink36
+  maximal-cog sum-cog-times sum-cog-counts max-life-time sum-life-times deadcars
+  ;avarages
+  sum-carsspawned
+  sum-cars-that-couldnot-spawn
+  sum-deadcars
+  sum-av-cog-times
+  sum-p
+  sum-avarage-car-count
+  sum-avarage-cars-in-cognestion
+  sum-av-life-times
+]
+
+to init-car-log
+  if gnerate-file [
+    let car-log-name (word "carlog-"  "dt" ".csv")
+    set log-car-file (word log-path car-log-name)
+    file-open log-car-file
+    file-print "deathtime ; birthtime ; lastTarget ; cognestion-count ; cognestion-time ; longest-cognestion"
+  ]
+  
+end
+
+to-report log-path
+  let path "log/"
+;  if System = "windows" [
+;    set path "log\\"
+;  ]
+  report path
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;               final tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; indian
+
+;to test-indian
+;  let sp 1
+;  let sz "indian"
+;  
+;  let times 10000
+;  let runs 10
+;  
+;  let t-av-file (word log-path (daytime "dt") "_" sz "average" times "ticksVariableSpawnProp.csv")
+;  print-all-log-test-headline t-av-file
+;  
+;  let tfile1 (word log-path (daytime "dt") "_" sz runs "runsFor" times "ticksVariableSpawnProp.csv")
+;  ;print-log-test-headline tfile1
+;  
+;  while [sp <= 100][
+;   runtest t-av-file tfile1 runs times sz sp
+;   set sp (sp + 1) 
+;  ]
+;end
+
+to-report my-dev [a b]
+  if b = 0 [
+   report 0 
+  ]
+  report a / b
+end
+
+to runtest [t-av-file tfile runs times sz sp]
+  let r 1
+  print-log-test-headline tfile
+  clear-all
+  while [r <= runs][
+    test-init
+    
+    set scenario sz
+    set spawn-propabilty sp
+    let get-readytime 250
+    while [ticks < get-readytime ] [
+      go 
+    ]
+    while [ticks < (times + get-readytime) ] [
+      go 
+    ]
+    let p (precision (100 * avarage-cars-in-cognestion / avarage-car-count) (1))
+    let av-cog-times (my-dev sum-cog-times sum-cog-counts)
+    let av-life-times (my-dev sum-life-times deadcars)
+; print in files
+    print-log-test-line tfile sz r sp av-cog-times p av-life-times
+    
+; all average  
+    set sum-carsspawned (sum-carsspawned + carsspawned)
+    set sum-deadcars (sum-deadcars + deadcars)
+    set sum-av-cog-times (sum-av-cog-times + av-cog-times)
+    set sum-p (sum-p + p)
+    set sum-avarage-car-count (sum-avarage-car-count + avarage-car-count)
+    set sum-avarage-cars-in-cognestion (sum-avarage-cars-in-cognestion + avarage-cars-in-cognestion)
+    set sum-av-life-times (sum-av-life-times + av-life-times)
+
+    set r r + 1
+  ]
+      
+     (print-all-log-test-line
+     t-av-file
+     sp
+     (sum-carsspawned / runs)
+     (sum-cars-that-couldnot-spawn / runs)
+     (sum-deadcars / runs)
+     (sum-av-cog-times / runs)
+     (sum-p / runs)
+     (sum-avarage-car-count / runs)
+     (sum-avarage-cars-in-cognestion / runs)
+     (sum-av-life-times / runs)
+     )
+;;
+end 
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;               stuff for printing testfiles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; for the average of the testvalues divided by the count of testruns
+
+to print-all-log-test-headline [
+  ;input-parameter
+  tfile
+]
+;function
+  file-open tfile
+  file-print (word 
+              "spawn-propability"
+        ";" "carsspawned"
+        ";" "carsnotspawned"
+        ";" "deadcars"
+        ";" "av-cog-time"
+        ";" "%av-cars-in-cog"
+        ";" "av-cars"
+        ";" "av-cars-in-cog"
+        ";" "av-life-time"
+        ";" "jtt1"
+        ";" "jtt2"
+        ";" "jtt3"
+    )
+  file-close
+end
+
+to print-all-log-test-line [
+  ;input-parameter
+  tfile
+  sp
+  av-carsspawned
+  av-cars-that-couldnot-spawn
+  av-deadcars
+  av-cog-times
+  av-p
+  av-avarage-car-count
+  av-avarage-cars-in-cognestion
+  av-life-times
+]
+;function
+  file-open tfile
+  file-print (word 
+          sp
+    ";" av-carsspawned
+    ";" av-cars-that-couldnot-spawn
+    ";" av-deadcars
+    ";" av-cog-times
+    ";" av-p
+    ";" av-avarage-car-count
+    ";" av-avarage-cars-in-cognestion
+    ";" av-life-times
+    )
+  file-close
+end
+
+;; for big testfile of all testruns in one file
+to print-log-test-headline [
+  ;input-parameter
+  tfile
+]
+;function
+  file-open tfile
+  file-print (word "szenario"
+        ";" "test-nummer"
+        ";" "spawn-propability"
+        ";" "carsspawned"
+        ";" "carsnotspawned"
+        ";" "deadcars"
+        ";" "av-cog-time"
+        ";" "%av-cars-in-cog"
+        ";" "av-cars"
+        ";" "av-cars-in-cog"
+        ";" "av-life-time"
+        ";" "jtt1"
+        ";" "jtt2"
+        ";" "jtt3"
+    )
+  file-close
+end
+
+to print-log-test-line [
+  ;input-parameter
+  tfile
+  sz
+  r
+  sp
+  av-cog-times
+  p
+  av-life-times
+]
+;function
+  file-open tfile
+  file-print (word sz
+    ";" r
+    ";" sp
+    ";" carsspawned
+    ";" deadcars
+    ";" av-cog-times
+    ";" p
+    ";" avarage-car-count
+    ";" avarage-cars-in-cognestion
+    ";" av-life-times
+    )
+  file-close
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;               inizialisation for tests
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to test-init
+
+  safely-init-roadnetwork
+
+  reset-ticks
+  init-car-log
+  ;initcars
+end
+
+to safely-init-roadnetwork
+  let s1 sum-carsspawned
+  let s2 sum-cars-that-couldnot-spawn
+  let s3 sum-deadcars
+  let s4 sum-av-cog-times
+  let s5 sum-p
+  let s6 sum-avarage-car-count
+  let s7 sum-avarage-cars-in-cognestion
+  let s8 sum-av-life-times
+  
+    
+  
+  set sum-carsspawned s1 
+  set sum-cars-that-couldnot-spawn s2 
+  set sum-deadcars s3 
+  set sum-av-cog-times s4 
+  set sum-p s5 
+  set sum-avarage-car-count s6 
+  set sum-avarage-cars-in-cognestion s7 
+  set sum-av-life-times s8 
+end

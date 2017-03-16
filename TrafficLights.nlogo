@@ -1,25 +1,43 @@
+extensions [time]
 __includes [
-           ; "junctionControl.nls"
-           ; "cars.nls"
-            "drawRoads.nls"
+           "drawRoads.nls"
             ]
 
 globals [
-  carcount carsspawned scenario
-
-  avarage-cars-in-cognestion
-  sum-car-cognestion-count
-  avarage-car-count
-  sum-carcount
   entrances
+  junction_light_list
+  junction_phase_list
 ]
 
-to go
-  tick
-  jgo
-  movecars
-  create-car-at-entrance
-end
+breed [cars car]
+cars-own[
+  nextTarget lastTarget speed
+  birthtime
+]
+
+breed [nodes node]
+directed-link-breed [roads road]
+
+breed [junctions junction]
+junctions-own [
+  jc
+  phase_list
+  current_phase
+  own_lights
+]
+
+nodes-own[
+  name
+  node_type    ; 0 - exit, 1 - entrance
+  is_light
+  is_active
+  link_end
+]
+
+
+
+
+;MAIN FUNCTION;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 to setup
   clear-all
@@ -30,17 +48,56 @@ to setup
 end
 
 
+
+to go
+  tick
+  jgo
+  movecars
+  create-car-at-entrance
+end
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;                      go functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to jgo
+  ask junctions [
+    ifelse jc = 1
+    [ tl ]
+    [ set jc jc - 1 ]
+  ]
+end
+
+to tl
+  let next-phase 0
+  ifelse current_phase >= (length phase_list - 1)
+  [
+    set current_phase 0
+    set next-phase first phase_list
+  ];else
+  [
+    set current_phase current_phase + 1
+    set next-phase item current_phase phase_list
+  ]
+  setting_light_color next-phase
+  ifelse next-phase = [ 0 0 0 0 ]
+  [ set jc jc_lenth / 2 ]
+  [ set jc jc_lenth ]
+end
+
+to setting_light_color [phase]
+  (foreach own_lights phase [
+      ask ?1 [
+        ifelse ?2 = 0
+        [ set color red ]
+        [ set color green]
+      ]
+  ])
+end
+
+
 ;CARS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-breed [cars car]
-cars-own[
-  nextTarget lastTarget speed
-  leader?
-  cognestion cognestion-time current-cognestion-time cognestion-count longest-cognestion average-cognestion-time
-  birthtime
-]
-
 
 to create-car-at-entrance
   if (random 100 < spawn-propabilty)
@@ -61,11 +118,7 @@ to create-car-at-entrance
           die]
 
         face nextTarget
-        set cognestion false
-        set carcount (carcount + 1)
-        set carsspawned (carsspawned + 1)
         set birthtime ticks
-        set leader? false
       ]
     ]
   ]
@@ -77,9 +130,7 @@ to updateTarget
   set lastTarget nextTarget
   ifelse length [link_end] of nextTarget > 0
   [ set nextTarget one-of [link_end] of nextTarget ]
-  [ set carcount ( carcount - 1)
-    die
-  ]
+  [ die ]
 
 end
 
@@ -118,11 +169,9 @@ to following-car-ahead-speed [ dis-ahead ]
   ifelse any? cars-ahead
   [
     let car0 min-one-of cars-ahead [distance myself]
-    set leader? false
     set speed [speed] of car0
   ]
   [
-    set leader? true
     speed-up
   ]
 end
@@ -141,92 +190,6 @@ to speed-up  ;; turtle procedure
   [ set speed speed + acceleration ]
 end
 
-;;;DRAWROADS;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-to init-junctions
-  if length junction_phase_list != length junction_light_list
-  [
-    print "ERROR!! junction_phase_list != length junction_light_list"
-    stop
-  ]
-  let n length junction_phase_list
-  create-junctions n [
-    set hidden? true
-    set jc jc_lenth
-    set own_lights [ ]
-  ]
-
-  (foreach (sort junctions) junction_light_list junction_phase_list [
-    ; mark nodes as light
-    ask ?1 [
-      foreach ?2 [ set own_lights lput one-of nodes with [name = ?] own_lights ]
-
-      set current_phase 0
-
-      (foreach own_lights [ask ? [
-         set is_light true
-         set color red
-         set is_active true
-         ]
-      ])
-
-      set phase_list ?3
-      setting_light_color first ?3
-
-    ]
-  ])
-
-end
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;                      go functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-to jgo
-  ask junctions [
-    ifelse jc = 1
-    [ tl ]
-    [ set jc jc - 1 ]
-  ]
-
-;  if scenario = "indian"     [              ];indian all lights ar green no toggeling
-;  if scenario = "constant"   [jt-constant   ]
-;  if scenario = "traffic"    [jt-traffic    ]
-;  if scenario = "cooperativ" [jt-cooperativ ]
-end
-
-to tl
-  let next-phase 0
-  ifelse current_phase >= (length phase_list - 1)
-  [
-    set current_phase 0
-    set next-phase first phase_list
-  ];else
-  [
-    set current_phase current_phase + 1
-    set next-phase item current_phase phase_list
-  ]
-  setting_light_color next-phase
-  ifelse next-phase = [ 0 0 0 0 ]
-  [ set jc jc_lenth / 2 ]
-  [ set jc jc_lenth ]
-end
-
-to setting_light_color [phase]
-  (foreach own_lights phase [
-      ask ?1 [
-        ifelse ?2 = 0
-        [ set color red ]
-        [ set color green]
-      ]
-  ])
-end
 @#$#@#$#@
 GRAPHICS-WINDOW
 417
@@ -256,9 +219,9 @@ ticks
 30.0
 
 BUTTON
-146
+11
 10
-212
+171
 55
 NIL
 setup
@@ -273,10 +236,10 @@ NIL
 1
 
 SLIDER
-7
-60
-186
-93
+8
+129
+187
+162
 spawn-propabilty
 spawn-propabilty
 0
@@ -304,106 +267,11 @@ NIL
 NIL
 1
 
-MONITOR
-321
-158
-411
-203
-cars on street
-carcount
-17
-1
-11
-
-MONITOR
-216
-158
-319
-203
-NIL
-carsspawned
-17
-1
-11
-
-MONITOR
-217
-209
-338
-254
-cars in cognestion
-count cars with [cognestion = true]
-0
-1
-11
-
-SWITCH
-12
-522
-152
-555
-gnerate-file
-gnerate-file
-1
-1
--1000
-
-PLOT
-8
-156
-208
-306
-plot 1
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"pen-1" 1.0 0 -2674135 true "" "plot count cars"
-
-MONITOR
-215
-423
-379
-468
-NIL
-avarage-cars-in-cognestion
-0
-1
-11
-
-MONITOR
-213
-323
-379
-368
-NIL
-avarage-car-count
-0
-1
-11
-
-MONITOR
-214
-373
-379
-418
-percentige of cars in cog
-precision (100 * avarage-cars-in-cognestion / avarage-car-count) (1)
-0
-1
-11
-
 SLIDER
-8
-320
-180
-353
+10
+204
+182
+237
 acceleration
 acceleration
 0
@@ -415,10 +283,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-10
-406
-182
-439
+12
+290
+184
+323
 speed-limit
 speed-limit
 0
@@ -430,10 +298,10 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-200
-65
-355
-125
+202
+129
+357
+189
 jc_lenth
 40
 1
@@ -441,10 +309,10 @@ jc_lenth
 Number
 
 SLIDER
-8
-356
-180
-389
+10
+240
+182
+273
 deceleration
 deceleration
 0
@@ -457,9 +325,9 @@ HORIZONTAL
 
 BUTTON
 279
-16
-342
-49
+10
+336
+55
 NIL
 go
 NIL
@@ -473,43 +341,58 @@ NIL
 1
 
 SWITCH
-13
-452
-155
-485
+15
+336
+157
+369
 display_label?
 display_label?
 1
 1
 -1000
 
-SLIDER
-10
+TEXTBOX
+199
 110
-182
-143
-import-option
-import-option
-0
+389
+138
+time of junction phase transition
+11
+0.0
 1
+
+TEXTBOX
+23
+113
+173
+131
+traffic density
+11
+0.0
 1
-1
-1
-NIL
-HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+Simulate traffic flows on a user-modified road network under various traffic light policies.
 
 ## HOW IT WORKS
 
-(what rules the agents use to create the overall behavior of the model)
++ draw-roads
+-- node_list
+-- link_list
+-- junction_light_list
+-- junction_phase_list
+-- entrance_list
+
++ go
+-- jgo
+-- movecars
+-- create-car-at-entrance
 
 ## HOW TO USE IT
 
-(how to use the model, including a description of each of the items in the Interface tab)
+First pressing the "setup" button to intialise all the variables. Then pressing "go" button to start the simulation process.
 
 ## THINGS TO NOTICE
 
@@ -525,15 +408,21 @@ HORIZONTAL
 
 ## NETLOGO FEATURES
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
++ a "nls" file is included
 
 ## RELATED MODELS
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
++ Inspired by https://github.com/D1ng5/traficlight
+
++ Use codes from official model library "traffic basic" to control car speed.
 
 ## CREDITS AND REFERENCES
 
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+http://modelingcommons.org/browse/one_model/4831
+
+All rights reserved. Permission to use, modify or redistribute this model is hereby granted, provided that both of the following requirements are followed: a) this copyright notice is included. b) this model will not be redistributed for profit without permission from Jihe Gao.
+
+Contact jihe.gao@jiejiaotech.com
 @#$#@#$#@
 default
 true
